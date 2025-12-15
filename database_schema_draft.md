@@ -55,12 +55,12 @@ Stores the assumptions needed for the Mass Balance calculation.
 
 
 
-####Table 6: `model_results_material_flow`Stores the calculated outputs for the Sankey diagrams.
+## Table 6: `model_results_material_flow`
+Stores the calculated outputs for the Sankey diagrams.
 
 * `id` (PK)
 * `country_iso` (FK)
 * `year` (Int)
 * `calculated_processing_use` (Decimal) (The result of P+I-E)
 * `calculated_stock_change` (Decimal)
-* 
-`implied_processing_capacity` (Decimal) 
+* `implied_processing_capacity` (Decimal) 
