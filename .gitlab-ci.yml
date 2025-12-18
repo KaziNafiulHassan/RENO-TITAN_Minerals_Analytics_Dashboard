@@ -1,0 +1,60 @@
+stages:
+  - fetch
+  - test
+  - build
+  - deploy
+
+variables:
+  DVC_CACHE_DIR: .dvc/cache
+
+# Weekly data fetch (runs every Monday at 00:00 UTC)
+fetch_data:
+  stage: fetch
+  script:
+    - pip install requests pandas dvc
+    - python data/scripts/fetch_comtrade.py
+    - dvc repro
+    - dvc push
+  only:
+    schedules:
+      - "0 0 * * 1"  # Cron for weekly
+  artifacts:
+    paths:
+      - data/
+    expire_in: 1 week
+
+# Test for inconsistencies
+test_inconsistencies:
+  stage: test
+  script:
+    - pip install pandas sqlalchemy
+    - python data/scripts/check_inconsistencies.py
+  dependencies:
+    - fetch_data
+  allow_failure: false
+
+# Build Docker images
+build_backend:
+  stage: build
+  script:
+    - docker build -t reno-titan-backend backend/
+  only:
+    - main
+
+build_frontend:
+  stage: build
+  script:
+    - docker build -t reno-titan-frontend frontend/
+  only:
+    - main
+
+# Deploy (example for institutional server)
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploy to server"
+    # Add SSH commands to pull images and run docker-compose
+  only:
+    - main
+  environment:
+    name: production

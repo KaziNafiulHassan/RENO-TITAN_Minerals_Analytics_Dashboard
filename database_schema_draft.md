@@ -25,8 +25,8 @@ Stores comparative production series from different authorities.
 * `commodity_id` (FK)
 * `source_authority` (Enum: 'USGS', 'BGS', 'NationalStats')
 * `value_tons` (Decimal)
-* 
-`notes` (Text) (e.g., "inconsistencies in reported data" )
+* `quality_flag` (Enum: 'Official', 'Estimated', 'Mirror-Derived')
+* `notes` (Text) (e.g., "inconsistencies in reported data" )
 
 ## Table 4: `data_trade_flows`
 Stores bilateral trade data for "Mirror View" and "Top Routes" analysis.
@@ -41,6 +41,7 @@ Stores bilateral trade data for "Mirror View" and "Top Routes" analysis.
 * `net_weight_kg` (Decimal)
 * `quantity_unit` (String)
 * `source_db` (Enum: 'WITS', 'Comtrade', 'BACI')
+* `quality_flag` (Enum: 'Official', 'Estimated', 'Mirror-Derived')
 
 ## Table 5: `model_processing_params`
 Stores the assumptions needed for the Mass Balance calculation.
@@ -63,4 +64,5 @@ Stores the calculated outputs for the Sankey diagrams.
 * `year` (Int)
 * `calculated_processing_use` (Decimal) (The result of P+I-E)
 * `calculated_stock_change` (Decimal)
-* `implied_processing_capacity` (Decimal) 
+* `implied_processing_capacity` (Decimal)
+* `uncertainty_factor` (Decimal) (Confidence interval for results) 
