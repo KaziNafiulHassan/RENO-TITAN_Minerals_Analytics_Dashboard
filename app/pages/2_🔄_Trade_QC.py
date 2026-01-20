@@ -256,7 +256,9 @@ with tab3:
             # Unit value distribution chart
             st.subheader("Unit Value Distribution")
             
-            fig = plot_unit_value_distribution(uv_df[['reporter_iso3', 'unit_value']].copy())
+            uv_plot_df = uv_df[['reporter_iso3', 'unit_value']].copy()
+            uv_plot_df.rename(columns={'reporter_iso3': 'country_iso3'}, inplace=True)
+            fig = plot_unit_value_distribution(uv_plot_df)
             st.plotly_chart(fig, use_container_width=True)
             
             # Outliers detection

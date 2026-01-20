@@ -21,6 +21,7 @@ from utils.database import (
     get_hs_codes,
     get_country_name
 )
+from utils.country_coordinates import get_country_centroid
 
 # ============================================================================
 # PAGE CONFIGURATION
@@ -120,8 +121,11 @@ if view_type == "Production Choropleth":
             tiles='OpenStreetMap'
         )
         
-        # Add country markers
+        # Add country markers with actual coordinates
         for _, row in country_prod.iterrows():
+            # Get country centroid coordinates
+            lat, lon = get_country_centroid(row['iso3'])
+            
             # Determine color based on production level
             production = row['production']
             max_prod = country_prod['production'].max()
@@ -135,14 +139,18 @@ if view_type == "Production Choropleth":
             else:
                 color = 'yellow'
             
+            # Calculate radius based on production (scale down for visibility)
+            radius = max(3, min(20, (production / max_prod) * 15))
+            
             folium.CircleMarker(
-                location=[0, 0],  # Note: would need actual coordinates
-                radius=8,
-                popup=f"{row['name']}: {row['production']:,.0f} tonnes",
+                location=[lat, lon],
+                radius=radius,
+                popup=f"<b>{row['name']}</b><br>Production: {row['production']:,.0f} tonnes",
                 color=color,
                 fill=True,
                 fillColor=color,
-                fillOpacity=0.7
+                fillOpacity=0.7,
+                weight=2
             ).add_to(m)
         
         # Display map
@@ -227,18 +235,55 @@ else:
                 tiles='OpenStreetMap'
             )
             
-            # Add flow routes as polylines
+            # Track unique countries for markers
+            countries_marked = set()
+            max_trade_value = routes['value_usd'].max()
+            
+            # Add flow routes as polylines and markers
             for _, route in routes.iterrows():
-                # Note: In production, would use actual country coordinates
-                # For MVP, simplified visualization
                 if pd.notna(route['value_usd']) and route['value_usd'] > 0:
-                    # Size based on trade value
-                    weight = min(max(route['value_usd'] / 100000000, 1), 10)
+                    # Get coordinates for exporter and importer
+                    export_lat, export_lon = get_country_centroid(route['reporter_iso3'])
+                    import_lat, import_lon = get_country_centroid(route['partner_iso3'])
                     
-                    folium.Marker(
-                        location=[0, 0],
-                        popup=f"{route['exporter_name']} → {route['importer_name']}: ${route['value_usd']:,.0f}",
+                    # Draw line between countries
+                    weight = min(max((route['value_usd'] / max_trade_value) * 5, 0.5), 10)
+                    
+                    folium.PolyLine(
+                        locations=[[export_lat, export_lon], [import_lat, import_lon]],
+                        weight=weight,
+                        color='blue',
+                        opacity=0.6,
+                        popup=f"{route['exporter_name']} → {route['importer_name']}: ${route['value_usd']:,.0f}"
                     ).add_to(m)
+                    
+                    # Add exporter marker (only once per country)
+                    if route['reporter_iso3'] not in countries_marked:
+                        folium.CircleMarker(
+                            location=[export_lat, export_lon],
+                            radius=6,
+                            popup=f"<b>{route['exporter_name']}</b> (Exporter)",
+                            color='darkgreen',
+                            fill=True,
+                            fillColor='green',
+                            fillOpacity=0.7,
+                            weight=2
+                        ).add_to(m)
+                        countries_marked.add(route['reporter_iso3'])
+                    
+                    # Add importer marker (only once per country)
+                    if route['partner_iso3'] not in countries_marked:
+                        folium.CircleMarker(
+                            location=[import_lat, import_lon],
+                            radius=6,
+                            popup=f"<b>{route['importer_name']}</b> (Importer)",
+                            color='darkred',
+                            fill=True,
+                            fillColor='red',
+                            fillOpacity=0.7,
+                            weight=2
+                        ).add_to(m)
+                        countries_marked.add(route['partner_iso3'])
             
             # Display map
             st_folium(m, width=1200, height=600)
