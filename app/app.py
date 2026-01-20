@@ -4,6 +4,13 @@ Entry point for the analytics dashboard
 """
 
 import streamlit as st
+import sys
+import os
+
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from utils.database import test_connection, get_table_count
 
 # ============================================================================
 # PAGE CONFIGURATION
@@ -29,7 +36,7 @@ st.sidebar.markdown("---")
 # ============================================================================
 
 st.title("🌍 RENO-TITAN Intelligence Platform")
-st.subtitle("Global Supply Chain Analytics for Titanium, Zirconium & Rare Earth Elements")
+st.write("#### Global Supply Chain Analytics for Titanium, Zirconium & Rare Earth Elements")
 
 col1, col2 = st.columns(2)
 
@@ -138,19 +145,28 @@ with st.expander("📖 Quick Start Guide"):
 st.markdown("---")
 st.header("📊 System Status")
 
+# Get actual database status
+db_connected = test_connection()
+countries_count = get_table_count("countries") if db_connected else 0
+hs_codes_count = get_table_count("hs_codes") if db_connected else 0
+production_count = get_table_count("production_data") if db_connected else 0
+trade_count = get_table_count("trade_data") if db_connected else 0
+total_records = production_count + trade_count
+
 status_cols = st.columns(4)
 
+db_status = "✅ Connected" if db_connected else "❌ Not Connected"
 with status_cols[0]:
-    st.metric("Database", "Not Connected", delta="Setup required")
+    st.metric("Database", db_status.split()[0], delta=db_status.split()[1] if len(db_status.split()) > 1 else "")
 
 with status_cols[1]:
-    st.metric("Data Records", "0", delta="Awaiting ETL")
+    st.metric("Data Records", f"{total_records:,}", delta=f"Production: {production_count}, Trade: {trade_count}")
 
 with status_cols[2]:
-    st.metric("Countries Mapped", "0", delta="Awaiting data load")
+    st.metric("Countries Mapped", f"{countries_count:,}", delta="Ready" if countries_count > 0 else "Loading")
 
 with status_cols[3]:
-    st.metric("HS Codes", "0", delta="Reference only")
+    st.metric("HS Codes", f"{hs_codes_count:,}", delta="Reference loaded" if hs_codes_count > 0 else "Loading")
 
 # ============================================================================
 # FOOTER
