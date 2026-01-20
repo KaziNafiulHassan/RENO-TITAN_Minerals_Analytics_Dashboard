@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/home/kazi-nafiul-hassan/Hochschule Magdeburg-Stendal/RENO_TITAN_Project/code/reno-titan-intelligence-platform/venv/bin/python3" "$0" "$@"
+'''exec' "/home/kazi-nafiul-hassan/Hochschule Magdeburg-Stendal/RENO_TITAN_Project/code/reno-titan-intelligence-platform/venv/bin/python" "$0" "$@"
 ' '''
 import sys
 from httpx import main
