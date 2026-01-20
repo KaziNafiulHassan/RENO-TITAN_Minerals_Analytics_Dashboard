@@ -1,0 +1,62 @@
+{
+  "data_sources": {
+    "usgs": {
+      "name": "USGS National Minerals Information Center",
+      "description": "US Geological Survey overview and commodity sheets",
+      "commodities": {
+        "titanium": {
+          "url": "https://www.usgs.gov/centers/national-minerals-information-center/titanium-statistics-and-information?utm_source=chatgpt.com",
+          "topics": ["Titanium minerals", "Titanium", "TiO₂"]
+        },
+        "zirconium": {
+          "url": "https://www.usgs.gov/centers/national-minerals-information-center/zirconium-and-hafnium-statistics-and-information?utm_source=chatgpt.com",
+          "topics": ["Zirconium", "Hafnium"]
+        },
+        "rare_earth_elements": {
+          "url": "https://www.usgs.gov/centers/national-minerals-information-center/rare-earths-statistics-and-information?utm_source=chatgpt.com",
+          "topics": ["Rare Earths", "REE"]
+        }
+      }
+    },
+    "bgs": {
+      "name": "British Geological Survey - World Mineral Statistics",
+      "description": "World Mineral Production and long-run data tool",
+      "url": "https://www.bgs.ac.uk/mineralsuk/statistics/world-mineral-statistics/world-mineral-statistics-data-download/world-mineral-statistics-data/",
+      "data_types": ["World Mineral Production", "Long-run historical data"]
+    },
+    "world_bank_wits": {
+      "name": "World Integrated Trade Solution (WITS)",
+      "description": "World trade data with HS-6 product classification",
+      "web_interface": {
+        "url": "https://wits.worldbank.org/trade/comtrade/en/country/USA/year/2023/tradeflow/Imports/partner/ALL/product/282300",
+        "note": "Example query for USA imports in 2023, product code 282300"
+      },
+      "api": {
+        "url": "https://wits.worldbank.org/witsapiintro.aspx?lang=en",
+        "description": "API documentation for programmatic access"
+      },
+      "classification": "HS-6 product codes"
+    },
+    "cepii_baci": {
+      "name": "CEPII BACI Database",
+      "description": "Cleaned bilateral HS-6 trade flows",
+      "url": "https://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37",
+      "classification": "HS-6",
+      "data_type": "Bilateral trade flows"
+    },
+    "eurostat_comext": {
+      "name": "Eurostat COMEXT",
+      "description": "EU international trade statistics with CN8 classification",
+      "url": "https://ec.europa.eu/eurostat/web/international-trade-in-goods/database",
+      "classification": "CN8",
+      "frequency": ["Monthly", "Annual"],
+      "access": "Bulk download available"
+    }
+  },
+  "metadata": {
+    "created": "2026-01-20",
+    "purpose": "Reference list for mineral and trade statistics data sources",
+    "primary_commodities": ["Titanium", "Zirconium", "Hafnium", "Rare Earth Elements"],
+    "data_categories": ["Production statistics", "Trade flows", "Commodity information"]
+  }
+}
