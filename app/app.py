@@ -31,6 +31,15 @@ st.sidebar.title("🌍 RENO-TITAN")
 st.sidebar.write("Critical Minerals Supply Chain Analytics")
 st.sidebar.markdown("---")
 
+# Navigation pages
+st.sidebar.page_link("app.py", label="🏠 Home", icon="🏠")
+st.sidebar.page_link("pages/1_📊_Production_Analysis.py", label="📊 Production Analysis")
+st.sidebar.page_link("pages/2_🔄_Trade_QC.py", label="🔄 Trade QC")
+st.sidebar.page_link("pages/3_🗺️_Geospatial_Maps.py", label="🗺️ Geospatial Maps")
+st.sidebar.page_link("pages/4_🌊_Material_Flow.py", label="🌊 Material Flow")
+
+st.sidebar.markdown("---")
+
 # ============================================================================
 # HOME PAGE CONTENT
 # ============================================================================
@@ -80,7 +89,8 @@ with col1:
     <div style="border: 2px solid #1f77b4; padding: 15px; border-radius: 5px; text-align: center;">
         <h3>📊</h3>
         <b>Production Analysis</b><br>
-        <small>USGS vs BGS comparison</small>
+        <small>USGS vs BGS comparison</small><br><br>
+        <a href="/Production_Analysis" style="color: #1f77b4; text-decoration: none;">Go →</a>
     </div>
     """, unsafe_allow_html=True)
 
@@ -89,7 +99,8 @@ with col2:
     <div style="border: 2px solid #ff7f0e; padding: 15px; border-radius: 5px; text-align: center;">
         <h3>🔄</h3>
         <b>Trade QC</b><br>
-        <small>Mirror analysis & routes</small>
+        <small>Mirror analysis & routes</small><br><br>
+        <a href="/Trade_QC" style="color: #ff7f0e; text-decoration: none;">Go →</a>
     </div>
     """, unsafe_allow_html=True)
 
@@ -98,7 +109,8 @@ with col3:
     <div style="border: 2px solid #2ca02c; padding: 15px; border-radius: 5px; text-align: center;">
         <h3>🗺️</h3>
         <b>Geospatial Maps</b><br>
-        <small>Choropleths & flows</small>
+        <small>Choropleths & flows</small><br><br>
+        <a href="/Geospatial_Maps" style="color: #2ca02c; text-decoration: none;">Go →</a>
     </div>
     """, unsafe_allow_html=True)
 
@@ -107,7 +119,8 @@ with col4:
     <div style="border: 2px solid #d62728; padding: 15px; border-radius: 5px; text-align: center;">
         <h3>🌊</h3>
         <b>Material Flow</b><br>
-        <small>Sankey diagrams</small>
+        <small>Sankey diagrams</small><br><br>
+        <a href="/Material_Flow" style="color: #d62728; text-decoration: none;">Go →</a>
     </div>
     """, unsafe_allow_html=True)
 

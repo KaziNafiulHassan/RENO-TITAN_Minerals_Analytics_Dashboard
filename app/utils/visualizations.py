@@ -199,6 +199,74 @@ def plot_unit_value_distribution(df: pd.DataFrame) -> go.Figure:
     return fig
 
 # ============================================================================
+# SANKEY DIAGRAM FUNCTIONS
+# ============================================================================
+
+def plot_material_flow_sankey(
+    sources: List[str],
+    targets: List[str],
+    values: List[float],
+    labels: List[str],
+    title: str = "Material Flow"
+) -> go.Figure:
+    """
+    Create Sankey diagram for material flows.
+    
+    Args:
+        sources: List of source indices
+        targets: List of target indices
+        values: List of flow quantities
+        labels: List of all node labels
+        title: Diagram title
+    
+    Returns:
+        Plotly Figure object
+    """
+    fig = go.Figure(data=[go.Sankey(
+        node=dict(
+            pad=15,
+            thickness=20,
+            line=dict(color='black', width=0.5),
+            label=labels,
+            color=['lightblue', 'lightgreen', 'lightcoral', 'lightyellow'][:len(labels)]
+        ),
+        link=dict(
+            source=sources,
+            target=targets,
+            value=values
+        )
+    )])
+    
+    fig.update_layout(title_text=title, height=600, font_size=10)
+    
+    return fig
+
+def plot_mass_balance_waterfall(df: pd.DataFrame, title: str = "Mass Balance") -> go.Figure:
+    """
+    Create waterfall chart for mass balance.
+    
+    Args:
+        df: DataFrame with columns ['category', 'value']
+        title: Chart title
+    
+    Returns:
+        Plotly Figure object
+    """
+    fig = go.Figure(go.Waterfall(
+        x=df['category'],
+        y=df['value'],
+        connector={"line": {"color": "rgba(63, 63, 63, 0.5)"}},
+    ))
+    
+    fig.update_layout(
+        title=title,
+        height=400,
+        waterfallgap=0.3
+    )
+    
+    return fig
+
+# ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
 

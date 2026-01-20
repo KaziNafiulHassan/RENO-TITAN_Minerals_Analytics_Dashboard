@@ -357,6 +357,124 @@ def get_country_name(iso3: str) -> Optional[str]:
         logger.error(f"❌ Error getting country name: {e}")
         return None
 
+def get_hs_codes() -> pd.DataFrame:
+    """Get all HS codes and descriptions."""
+    try:
+        client = get_db_client()
+        response = client.table("hs_codes").select("code, description, commodity_group, material_type").execute()
+        df = pd.DataFrame(response.data)
+        return df
+    except Exception as e:
+        logger.error(f"❌ Error getting HS codes: {e}")
+        return pd.DataFrame()
+
+def get_top_trade_routes(
+    hs_code: Optional[str] = None,
+    year: Optional[int] = None,
+    limit: int = 15
+) -> pd.DataFrame:
+    """
+    Get top trade routes by value.
+    
+    Args:
+        hs_code: Filter by HS code
+        year: Filter by year
+        limit: Number of routes to return
+    
+    Returns:
+        DataFrame with route analysis
+    """
+    try:
+        df = get_trade_data(hs_code=hs_code, year_min=year, year_max=year)
+        
+        if df.empty:
+            return df
+        
+        # Create route column and aggregate
+        routes = df.groupby(['reporter_iso3', 'partner_iso3']).agg({
+            'value_usd': 'sum',
+            'quantity': 'sum'
+        }).reset_index()
+        
+        routes['route'] = routes.apply(
+            lambda row: f"{row['reporter_iso3']} → {row['partner_iso3']}" if pd.notna(row['partner_iso3']) else f"{row['reporter_iso3']} → Unknown",
+            axis=1
+        )
+        
+        routes = routes.sort_values('value_usd', ascending=False).head(limit)
+        routes.columns = ['reporter_iso3', 'partner_iso3', 'total_value_usd', 'total_quantity', 'route']
+        
+        return routes
+    except Exception as e:
+        logger.error(f"❌ Error getting top trade routes: {e}")
+        return pd.DataFrame()
+
+def get_trade_statistics(
+    hs_code: Optional[str] = None,
+    year_min: Optional[int] = None,
+    year_max: Optional[int] = None
+) -> Dict:
+    """
+    Get summary statistics for trade data.
+    
+    Args:
+        hs_code: Filter by HS code
+        year_min: Minimum year
+        year_max: Maximum year
+    
+    Returns:
+        Dictionary with statistics
+    """
+    try:
+        df = get_trade_data(hs_code=hs_code, year_min=year_min, year_max=year_max)
+        
+        if df.empty:
+            return {
+                'total_value': 0,
+                'total_quantity': 0,
+                'num_exporters': 0,
+                'num_routes': 0,
+                'avg_unit_value': 0
+            }
+        
+        stats = {
+            'total_value': df['value_usd'].sum(),
+            'total_quantity': df['quantity'].sum(),
+            'num_exporters': df['reporter_iso3'].nunique(),
+            'num_routes': len(df),
+            'avg_unit_value': (df['value_usd'].sum() / df['quantity'].sum()) if df['quantity'].sum() > 0 else 0
+        }
+        
+        return stats
+    except Exception as e:
+        logger.error(f"❌ Error getting trade statistics: {e}")
+        return {}
+
+def get_country_trade_profile(iso3: str) -> Dict:
+    """
+    Get trade profile for a specific country.
+    
+    Args:
+        iso3: Country ISO3 code
+    
+    Returns:
+        Dictionary with export/import statistics
+    """
+    try:
+        # Get exports from this country
+        exports = get_trade_data(reporter_iso3=iso3)
+        
+        export_stats = {
+            'total_export_value': exports['value_usd'].sum() if not exports.empty else 0,
+            'export_routes': len(exports) if not exports.empty else 0,
+            'top_export_destinations': exports.groupby('partner_iso3')['value_usd'].sum().head(5).to_dict() if not exports.empty else {}
+        }
+        
+        return export_stats
+    except Exception as e:
+        logger.error(f"❌ Error getting country trade profile: {e}")
+        return {}
+
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
