@@ -7,10 +7,10 @@ import streamlit as st
 import sys
 import os
 
-# Add current directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add parent directory (project root) to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.database import test_connection, get_table_count
+from app.utils.database import test_connection, get_table_count
 
 # ============================================================================
 # PAGE CONFIGURATION
@@ -31,12 +31,24 @@ st.sidebar.title("🌍 RENO-TITAN")
 st.sidebar.write("Critical Minerals Supply Chain Analytics")
 st.sidebar.markdown("---")
 
-# Navigation pages
-st.sidebar.page_link("app.py", label="🏠 Home", icon="🏠")
-st.sidebar.page_link("pages/1_📊_Production_Analysis.py", label="📊 Production Analysis")
-st.sidebar.page_link("pages/2_🔄_Trade_QC.py", label="🔄 Trade QC")
-st.sidebar.page_link("pages/3_🗺️_Geospatial_Maps.py", label="🗺️ Geospatial Maps")
-st.sidebar.page_link("pages/4_🌊_Material_Flow.py", label="🌊 Material Flow")
+# Navigation menu
+selected_page = st.sidebar.radio(
+    "Navigate to:",
+    ["Home", "Production Analysis", "Trade QC", "Geospatial Maps", "Material Flow"],
+    captions=["Main dashboard", "USGS vs BGS", "Mirror analysis", "Choropleths", "Sankey diagrams"]
+)
+
+# Route to selected page
+if selected_page == "Home":
+    pass  # Stay on home page
+elif selected_page == "Production Analysis":
+    st.switch_page("pages/1_📊_Production_Analysis.py")
+elif selected_page == "Trade QC":
+    st.switch_page("pages/2_🔄_Trade_QC.py")
+elif selected_page == "Geospatial Maps":
+    st.switch_page("pages/3_🗺️_Geospatial_Maps.py")
+elif selected_page == "Material Flow":
+    st.switch_page("pages/4_🌊_Material_Flow.py")
 
 st.sidebar.markdown("---")
 
