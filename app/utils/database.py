@@ -6,6 +6,7 @@ Handles all Supabase interactions and provides cached query functions.
 import os
 import logging
 from typing import List, Dict, Optional, Tuple
+from functools import lru_cache
 import pandas as pd
 from dotenv import load_dotenv
 
@@ -21,7 +22,14 @@ except ImportError:
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(os.getenv("LOG_LEVEL", "INFO"))
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -128,25 +136,29 @@ def insert_production_data(df: pd.DataFrame) -> bool:
         # Insert in batches of 100 to avoid timeout
         batch_size = 100
         inserted_count = 0
+        failed_count = 0
         for i in range(0, len(records), batch_size):
             batch = records[i:i+batch_size]
             try:
                 client.table("production_data").insert(batch).execute()
                 inserted_count += len(batch)
             except Exception as batch_error:
-                logger.warning(f"⚠️  Batch {i//batch_size} failed: {str(batch_error)[:100]}")
+                logger.warning(f"⚠️  Batch {i//batch_size} failed: {type(batch_error).__name__}: {str(batch_error)[:100]}")
                 # Try inserting one by one
                 for record in batch:
                     try:
                         client.table("production_data").insert([record]).execute()
                         inserted_count += 1
-                    except:
-                        pass
+                    except Exception as single_error:
+                        logger.debug(f"Failed to insert record: {single_error}")
+                        failed_count += 1
         
-        logger.info(f"✅ Inserted {inserted_count} production records")
+        logger.info(f"✅ Inserted {inserted_count}/{len(records)} production records")
+        if failed_count > 0:
+            logger.warning(f"⚠️  Failed to insert {failed_count} records")
         return inserted_count > 0
     except Exception as e:
-        logger.error(f"❌ Error inserting production data: {e}")
+        logger.error(f"❌ Error inserting production data: {type(e).__name__}: {e}")
         return False
 
 def insert_trade_data(df: pd.DataFrame) -> bool:
@@ -165,25 +177,29 @@ def insert_trade_data(df: pd.DataFrame) -> bool:
         # Insert in batches of 100
         batch_size = 100
         inserted_count = 0
+        failed_count = 0
         for i in range(0, len(records), batch_size):
             batch = records[i:i+batch_size]
             try:
                 client.table("trade_data").insert(batch).execute()
                 inserted_count += len(batch)
             except Exception as batch_error:
-                logger.warning(f"⚠️  Batch {i//batch_size} failed: {str(batch_error)[:100]}")
+                logger.warning(f"⚠️  Batch {i//batch_size} failed: {type(batch_error).__name__}: {str(batch_error)[:100]}")
                 # Try inserting one by one
                 for record in batch:
                     try:
                         client.table("trade_data").insert([record]).execute()
                         inserted_count += 1
-                    except:
-                        pass
+                    except Exception as single_error:
+                        logger.debug(f"Failed to insert record: {single_error}")
+                        failed_count += 1
         
-        logger.info(f"✅ Inserted {inserted_count} trade records")
+        logger.info(f"✅ Inserted {inserted_count}/{len(records)} trade records")
+        if failed_count > 0:
+            logger.warning(f"⚠️  Failed to insert {failed_count} records")
         return inserted_count > 0
     except Exception as e:
-        logger.error(f"❌ Error inserting trade data: {e}")
+        logger.error(f"❌ Error inserting trade data: {type(e).__name__}: {e}")
         return False
 
 # ============================================================================
@@ -202,15 +218,28 @@ def get_production_data(
     
     Args:
         commodity: Filter by commodity (e.g., 'titanium_minerals')
-        country_iso3: Filter by country ISO3 code
-        year_min: Minimum year
-        year_max: Maximum year
+        country_iso3: Filter by country ISO3 code (3-letter ISO code)
+        year_min: Minimum year (1900-2100)
+        year_max: Maximum year (1900-2100)
         data_source: Filter by source (USGS, BGS, etc.)
     
     Returns:
         DataFrame with production data
     """
     try:
+        # Input validation
+        if country_iso3 and (not isinstance(country_iso3, str) or len(country_iso3) != 3):
+            logger.warning(f"Invalid country code: {country_iso3}")
+            return pd.DataFrame()
+        
+        if year_min and (not isinstance(year_min, int) or year_min < 1900 or year_min > 2100):
+            logger.warning(f"Invalid year_min: {year_min}")
+            return pd.DataFrame()
+        
+        if year_max and (not isinstance(year_max, int) or year_max < 1900 or year_max > 2100):
+            logger.warning(f"Invalid year_max: {year_max}")
+            return pd.DataFrame()
+        
         client = get_db_client()
         query = client.table("production_data").select("*")
         
@@ -230,7 +259,7 @@ def get_production_data(
         logger.info(f"✅ Retrieved {len(df)} production records")
         return df
     except Exception as e:
-        logger.error(f"❌ Error querying production data: {e}")
+        logger.error(f"❌ Error querying production data: {type(e).__name__}: {e}")
         return pd.DataFrame()
 
 def get_top_producers(commodity: str, year: int, limit: int = 10) -> pd.DataFrame:
@@ -240,15 +269,29 @@ def get_top_producers(commodity: str, year: int, limit: int = 10) -> pd.DataFram
     Args:
         commodity: Commodity name
         year: Year to query
-        limit: Number of top producers (default: 10)
+        limit: Number of top producers (default: 10, max: 100)
     
     Returns:
         DataFrame with top producers
     """
     try:
+        # Input validation
+        if not isinstance(commodity, str) or not commodity:
+            logger.warning(f"Invalid commodity: {commodity}")
+            return pd.DataFrame()
+        
+        if not isinstance(year, int) or year < 1900 or year > 2100:
+            logger.warning(f"Invalid year: {year}")
+            return pd.DataFrame()
+        
+        if not isinstance(limit, int) or limit < 1 or limit > 100:
+            logger.warning(f"Invalid limit: {limit}, using default 10")
+            limit = 10
+        
         df = get_production_data(commodity=commodity, year_min=year, year_max=year)
         
         if df.empty:
+            logger.info(f"No production data for {commodity} in {year}")
             return df
         
         # Group by country and sum quantity
@@ -262,7 +305,7 @@ def get_top_producers(commodity: str, year: int, limit: int = 10) -> pd.DataFram
         
         return top
     except Exception as e:
-        logger.error(f"❌ Error getting top producers: {e}")
+        logger.error(f"❌ Error getting top producers: {type(e).__name__}: {e}")
         return pd.DataFrame()
 
 def get_production_comparison(commodity: str, country_iso3: str) -> pd.DataFrame:
@@ -334,38 +377,63 @@ def get_trade_data(
         logger.error(f"❌ Error querying trade data: {e}")
         return pd.DataFrame()
 
-def get_countries() -> pd.DataFrame:
-    """Get all countries."""
+@lru_cache(maxsize=1)
+def _get_countries_cached() -> Tuple:
+    """Internal cached countries query."""
     try:
         client = get_db_client()
         response = client.table("countries").select("iso3, name").execute()
-        df = pd.DataFrame(response.data)
+        return tuple(response.data) if response.data else ()
+    except Exception as e:
+        logger.error(f"❌ Error getting countries: {type(e).__name__}: {e}")
+        return ()
+
+def get_countries() -> pd.DataFrame:
+    """Get all countries (cached)."""
+    try:
+        cached_data = _get_countries_cached()
+        df = pd.DataFrame(cached_data)
         return df
     except Exception as e:
-        logger.error(f"❌ Error getting countries: {e}")
+        logger.error(f"❌ Error processing countries: {type(e).__name__}: {e}")
         return pd.DataFrame()
 
 def get_country_name(iso3: str) -> Optional[str]:
     """Get country name from ISO3 code."""
     try:
+        # Input validation
+        if not isinstance(iso3, str) or len(iso3) != 3:
+            logger.warning(f"Invalid ISO3 code: {iso3}")
+            return None
+        
         client = get_db_client()
-        response = client.table("countries").select("name").eq("iso3", iso3).execute()
+        response = client.table("countries").select("name").eq("iso3", iso3.upper()).execute()
         if response.data:
             return response.data[0]['name']
         return None
     except Exception as e:
-        logger.error(f"❌ Error getting country name: {e}")
+        logger.error(f"❌ Error getting country name: {type(e).__name__}: {e}")
         return None
 
-def get_hs_codes() -> pd.DataFrame:
-    """Get all HS codes and descriptions."""
+@lru_cache(maxsize=1)
+def _get_hs_codes_cached() -> Tuple:
+    """Internal cached HS codes query."""
     try:
         client = get_db_client()
         response = client.table("hs_codes").select("code, description, commodity_group, material_type").execute()
-        df = pd.DataFrame(response.data)
+        return tuple(response.data) if response.data else ()
+    except Exception as e:
+        logger.error(f"❌ Error getting HS codes: {type(e).__name__}: {e}")
+        return ()
+
+def get_hs_codes() -> pd.DataFrame:
+    """Get all HS codes and descriptions (cached)."""
+    try:
+        cached_data = _get_hs_codes_cached()
+        df = pd.DataFrame(cached_data)
         return df
     except Exception as e:
-        logger.error(f"❌ Error getting HS codes: {e}")
+        logger.error(f"❌ Error processing HS codes: {type(e).__name__}: {e}")
         return pd.DataFrame()
 
 def get_top_trade_routes(
@@ -377,13 +445,22 @@ def get_top_trade_routes(
     Get top trade routes by value.
     
     Args:
-        hs_code: Filter by HS code
-        year: Filter by year
-        limit: Number of routes to return
+        hs_code: Filter by HS code (6-digit code)
+        year: Filter by year (1900-2100)
+        limit: Number of routes to return (default: 15, max: 100)
     
     Returns:
         DataFrame with route analysis
     """
+    # Input validation
+    if limit < 1 or limit > 100:
+        logger.warning(f"Invalid limit: {limit}, using default 15")
+        limit = 15
+    
+    if hs_code and (not isinstance(hs_code, str) or len(hs_code) != 6 or not hs_code.isdigit()):
+        logger.warning(f"Invalid HS code: {hs_code}")
+        return pd.DataFrame()
+    
     try:
         df = get_trade_data(hs_code=hs_code, year_min=year, year_max=year)
         
@@ -406,7 +483,7 @@ def get_top_trade_routes(
         
         return routes
     except Exception as e:
-        logger.error(f"❌ Error getting top trade routes: {e}")
+        logger.error(f"❌ Error getting top trade routes: {type(e).__name__}: {e}")
         return pd.DataFrame()
 
 def get_trade_statistics(
@@ -447,7 +524,7 @@ def get_trade_statistics(
         
         return stats
     except Exception as e:
-        logger.error(f"❌ Error getting trade statistics: {e}")
+        logger.error(f"❌ Error getting trade statistics: {type(e).__name__}: {e}")
         return {}
 
 def get_country_trade_profile(iso3: str) -> Dict:
@@ -472,7 +549,7 @@ def get_country_trade_profile(iso3: str) -> Dict:
         
         return export_stats
     except Exception as e:
-        logger.error(f"❌ Error getting country trade profile: {e}")
+        logger.error(f"❌ Error getting country trade profile: {type(e).__name__}: {e}")
         return {}
 
 # ============================================================================
@@ -482,23 +559,30 @@ def get_country_trade_profile(iso3: str) -> Dict:
 def table_exists(table_name: str) -> bool:
     """Check if a table exists in the database."""
     try:
+        if not isinstance(table_name, str) or not table_name:
+            return False
+        
         client = get_db_client()
         response = client.table(table_name).select("*").limit(1).execute()
         return True
     except Exception as e:
-        logger.warning(f"Table '{table_name}' may not exist: {e}")
+        logger.debug(f"Table '{table_name}' may not exist: {type(e).__name__}")
         return False
 
 def get_table_count(table_name: str) -> int:
     """Get row count for a table."""
     try:
+        if not isinstance(table_name, str) or not table_name:
+            logger.warning(f"Invalid table name: {table_name}")
+            return 0
+        
         client = get_db_client()
         # Use count='exact' to get the actual row count
         response = client.table(table_name).select("*", count='exact').limit(0).execute()
         # response.count gives the total row count when limit(0) is used
         return response.count if hasattr(response, 'count') and response.count else 0
     except Exception as e:
-        logger.error(f"❌ Error getting table count: {e}")
+        logger.error(f"❌ Error getting table count for '{table_name}': {type(e).__name__}: {e}")
         return 0
 
 # ============================================================================
