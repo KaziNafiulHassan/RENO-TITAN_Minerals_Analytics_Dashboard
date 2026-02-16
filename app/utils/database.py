@@ -416,6 +416,32 @@ def get_country_name(iso3: str) -> Optional[str]:
         return None
 
 @lru_cache(maxsize=1)
+def _get_iso3_to_name_mapping_cached() -> Tuple:
+    """Internal cached ISO3-to-name mapping."""
+    try:
+        client = get_db_client()
+        response = client.table("countries").select("iso3, name").execute()
+        # Convert to tuple of tuples for caching
+        return tuple((item['iso3'], item['name']) for item in response.data) if response.data else ()
+    except Exception as e:
+        logger.error(f"❌ Error getting countries mapping: {type(e).__name__}: {e}")
+        return ()
+
+def get_iso3_to_name_mapping() -> Dict[str, str]:
+    """
+    Get mapping of ISO3 codes to country names (cached).
+    
+    Returns:
+        Dictionary with ISO3 codes as keys and country names as values
+    """
+    try:
+        cached_data = _get_iso3_to_name_mapping_cached()
+        return {iso3: name for iso3, name in cached_data}
+    except Exception as e:
+        logger.error(f"❌ Error building ISO3 mapping: {type(e).__name__}: {e}")
+        return {}
+
+@lru_cache(maxsize=1)
 def _get_hs_codes_cached() -> Tuple:
     """Internal cached HS codes query."""
     try:

@@ -7,7 +7,7 @@ import logging
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # PRODUCTION ANALYSIS VISUALIZATIONS
 # ============================================================================
 
-def plot_top_producers(df: pd.DataFrame, commodity: str, year: int) -> go.Figure:
+def plot_top_producers(df: pd.DataFrame, commodity: str, year: int, iso3_to_name: Optional[Dict[str, str]] = None) -> go.Figure:
     """
     Create bar chart of top producers.
     
@@ -23,6 +23,7 @@ def plot_top_producers(df: pd.DataFrame, commodity: str, year: int) -> go.Figure
         df: DataFrame with columns ['Country', 'Production', 'Unit']
         commodity: Commodity name (for title)
         year: Year (for title)
+        iso3_to_name: Optional mapping of ISO3 codes to country names
     
     Returns:
         Plotly Figure object
@@ -31,6 +32,11 @@ def plot_top_producers(df: pd.DataFrame, commodity: str, year: int) -> go.Figure
         fig = go.Figure()
         fig.add_annotation(text="No data available", showarrow=False)
         return fig
+    
+    # Map ISO3 codes to country names if mapping provided
+    if iso3_to_name:
+        df = df.copy()
+        df['Country'] = df['Country'].map(lambda x: iso3_to_name.get(x, x))
     
     fig = px.bar(
         df,
@@ -50,7 +56,7 @@ def plot_top_producers(df: pd.DataFrame, commodity: str, year: int) -> go.Figure
     
     return fig
 
-def plot_production_trend(df: pd.DataFrame, commodity: str, countries: List[str] = None) -> go.Figure:
+def plot_production_trend(df: pd.DataFrame, commodity: str, countries: List[str] = None, iso3_to_name: Optional[Dict[str, str]] = None) -> go.Figure:
     """
     Create line chart of production trends over time.
     
@@ -58,6 +64,7 @@ def plot_production_trend(df: pd.DataFrame, commodity: str, countries: List[str]
         df: DataFrame with columns ['year', 'country_iso3', 'quantity', 'data_source']
         commodity: Commodity name
         countries: List of countries to show (default: all)
+        iso3_to_name: Optional mapping of ISO3 codes to country names
     
     Returns:
         Plotly Figure object
@@ -71,11 +78,20 @@ def plot_production_trend(df: pd.DataFrame, commodity: str, countries: List[str]
     if countries:
         df = df[df['country_iso3'].isin(countries)]
     
+    df = df.copy()
+    
+    # Map ISO3 codes to country names if mapping provided
+    if iso3_to_name:
+        df['country_name'] = df['country_iso3'].map(lambda x: iso3_to_name.get(x, x))
+        color_col = 'country_name'
+    else:
+        color_col = 'country_iso3'
+    
     fig = px.line(
         df,
         x='year',
         y='quantity',
-        color='country_iso3',
+        color=color_col,
         line_dash='data_source',
         title=f"{commodity.title()} Production Trends",
         labels={'quantity': 'Production (tonnes)', 'year': 'Year'}

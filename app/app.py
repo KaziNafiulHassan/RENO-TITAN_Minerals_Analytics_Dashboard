@@ -24,35 +24,6 @@ st.set_page_config(
 )
 
 # ============================================================================
-# SIDEBAR NAVIGATION
-# ============================================================================
-
-st.sidebar.title("🌍 RENO-TITAN")
-st.sidebar.write("Critical Minerals Supply Chain Analytics")
-st.sidebar.markdown("---")
-
-# Navigation menu
-selected_page = st.sidebar.radio(
-    "Navigate to:",
-    ["Home", "Production Analysis", "Trade QC", "Geospatial Maps", "Material Flow"],
-    captions=["Main dashboard", "USGS vs BGS", "Mirror analysis", "Choropleths", "Sankey diagrams"]
-)
-
-# Route to selected page
-if selected_page == "Home":
-    pass  # Stay on home page
-elif selected_page == "Production Analysis":
-    st.switch_page("pages/1_📊_Production_Analysis.py")
-elif selected_page == "Trade QC":
-    st.switch_page("pages/2_🔄_Trade_QC.py")
-elif selected_page == "Geospatial Maps":
-    st.switch_page("pages/3_🗺️_Geospatial_Maps.py")
-elif selected_page == "Material Flow":
-    st.switch_page("pages/4_🌊_Material_Flow.py")
-
-st.sidebar.markdown("---")
-
-# ============================================================================
 # HOME PAGE CONTENT
 # ============================================================================
 
@@ -162,36 +133,6 @@ with st.expander("📖 Quick Start Guide"):
     
     See [reno_titan_guide.txt](../reno_titan_guide.txt) for detailed documentation.
     """)
-
-# ============================================================================
-# STATUS INDICATORS
-# ============================================================================
-
-st.markdown("---")
-st.header("📊 System Status")
-
-# Get actual database status
-db_connected = test_connection()
-countries_count = get_table_count("countries") if db_connected else 0
-hs_codes_count = get_table_count("hs_codes") if db_connected else 0
-production_count = get_table_count("production_data") if db_connected else 0
-trade_count = get_table_count("trade_data") if db_connected else 0
-total_records = production_count + trade_count
-
-status_cols = st.columns(4)
-
-db_status = "✅ Connected" if db_connected else "❌ Not Connected"
-with status_cols[0]:
-    st.metric("Database", db_status.split()[0], delta=db_status.split()[1] if len(db_status.split()) > 1 else "")
-
-with status_cols[1]:
-    st.metric("Data Records", f"{total_records:,}", delta=f"Production: {production_count}, Trade: {trade_count}")
-
-with status_cols[2]:
-    st.metric("Countries Mapped", f"{countries_count:,}", delta="Ready" if countries_count > 0 else "Loading")
-
-with status_cols[3]:
-    st.metric("HS Codes", f"{hs_codes_count:,}", delta="Reference loaded" if hs_codes_count > 0 else "Loading")
 
 # ============================================================================
 # FOOTER
