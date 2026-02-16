@@ -70,7 +70,7 @@ opentelemetry-proto==1.39.1
 opentelemetry-sdk==1.39.1
 opentelemetry-semantic-conventions==0.60b1
 packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work
-pandas==2.3.3
+pandas==2.0.3
 pillow==12.1.0
 platformdirs @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_platformdirs_1759953252/work
 pluggy @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_pluggy_1764896838/work
@@ -100,7 +100,7 @@ ruamel.yaml @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml_1761
 ruamel.yaml.clib @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml.clib_1760564169582/work
 scikit-learn==1.8.0
 scipy==1.17.0
-setuptools==80.9.0
+setuptools==82.0.0
 six==1.17.0
 skops==0.13.0
 smmap==5.0.2
