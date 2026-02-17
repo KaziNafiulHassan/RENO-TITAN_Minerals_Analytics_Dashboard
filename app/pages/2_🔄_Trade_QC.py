@@ -49,7 +49,7 @@ and identify trade patterns for critical minerals.
 
 st.subheader("Filters")
 
-filter_col1, filter_col2, filter_col3 = st.columns(3)
+filter_col1, filter_col2 = st.columns(2)
 
 # Get available HS codes
 hs_df = get_hs_codes()
@@ -75,20 +75,6 @@ with filter_col2:
         value=(2000, 2023),
         step=1
     )
-
-# Country filter
-countries_df = get_countries()
-with filter_col3:
-    if not countries_df.empty:
-        country_options = {row['name']: row['iso3'] for _, row in countries_df.iterrows()}
-        selected_country_name = st.selectbox(
-            "Focus Country (Optional)",
-            options=["All Countries"] + list(country_options.keys()),
-            key="trade_country"
-        )
-        selected_country = country_options.get(selected_country_name) if selected_country_name != "All Countries" else None
-    else:
-        selected_country = None
 
 st.markdown("---")
 
