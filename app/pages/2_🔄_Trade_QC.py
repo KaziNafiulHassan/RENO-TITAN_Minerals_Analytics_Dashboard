@@ -17,7 +17,8 @@ from utils.database import (
     get_trade_statistics,
     get_hs_codes,
     get_countries,
-    get_country_name
+    get_country_name,
+    get_iso3_to_name_mapping
 )
 
 # ============================================================================
@@ -104,6 +105,9 @@ tab1, tab2 = st.tabs(["Trade Overview", "Imports vs Exports"])
 with tab1:
     st.subheader("Trade Statistics Summary")
     
+    # Get ISO3 to country name mapping
+    iso3_to_name = get_iso3_to_name_mapping()
+    
     # Get trade data
     trade_df = get_trade_data(
         hs_code=selected_hs_code,
@@ -150,22 +154,211 @@ with tab1:
                 delta="per tonne"
             )
         
-        # Trade data table
-        st.subheader("Trade Records")
+        # ====================================================================
+        # EXPORT PARTNERS ANALYSIS
+        # ====================================================================
         
-        display_df = trade_df[['hs_code', 'reporter_iso3', 'partner_iso3', 'year', 'flow', 'value_usd', 'quantity']].copy()
-        display_df.columns = ['HS Code', 'Exporter', 'Importer', 'Year', 'Flow', 'Value (USD)', 'Quantity (tonnes)']
+        st.subheader("Top 10 Exporting Countries")
         
-        # Format columns
-        display_df['Value (USD)'] = display_df['Value (USD)'].apply(lambda x: f"${x:,.0f}")
-        display_df['Quantity (tonnes)'] = display_df['Quantity (tonnes)'].apply(lambda x: f"{x:,.0f}")
+        # Filter exports
+        export_df_filtered = trade_df[trade_df['flow'].str.lower() == 'export'].copy()
         
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        # Aggregate by reporter (the country exporting - sum across all years in range)
+        exports_by_partner = export_df_filtered.groupby('reporter_iso3').agg({
+            'quantity': 'sum',
+            'value_usd': 'sum'
+        }).reset_index()
         
-        # Download button
+        # Filter out zero quantities
+        exports_by_partner = exports_by_partner[exports_by_partner['quantity'] > 0].copy()
+        
+        # Sort by quantity (descending) and get top 10
+        exports_by_partner = exports_by_partner.sort_values('quantity', ascending=False).head(10).reset_index(drop=True)
+        
+        # Add rank column
+        exports_by_partner.insert(0, 'Rank', range(1, len(exports_by_partner) + 1))
+        
+        # Map ISO3 to country names
+        exports_by_partner['Partner'] = exports_by_partner['reporter_iso3'].map(
+            lambda x: iso3_to_name.get(x, x)
+        )
+        
+        # Format display columns
+        exports_display = exports_by_partner[['Rank', 'Partner', 'quantity', 'value_usd']].copy()
+        exports_display.columns = ['Rank', 'Country', 'Total Quantity (tonnes)', 'Total Value (USD)']
+        exports_display['Total Quantity (tonnes)'] = exports_display['Total Quantity (tonnes)'].apply(
+            lambda x: f"{x:,.0f}"
+        )
+        exports_display['Total Value (USD)'] = exports_display['Total Value (USD)'].apply(
+            lambda x: f"${x:,.0f}" if x > 0 else "$0"
+        )
+        
+        # Display with sorting
+        st.dataframe(exports_display, use_container_width=True, hide_index=True)
+        
+        # Pie chart for exports
+        export_chart_col1, export_chart_col2 = st.columns([1, 1])
+        
+        with export_chart_col1:
+            st.write("**Export Distribution by Quantity**")
+            
+            # Prepare data for pie chart (top 10 + Other)
+            export_pie_data = exports_by_partner[['Partner', 'quantity']].copy()
+            export_pie_data.columns = ['Country', 'Quantity']
+            
+            # Calculate "Other" if there are more than top 10
+            if len(export_df_filtered) > len(export_pie_data):
+                other_qty = export_df_filtered[~export_df_filtered['reporter_iso3'].isin(
+                    exports_by_partner['reporter_iso3']
+                )]['quantity'].sum()
+                
+                if other_qty > 0:
+                    other_row = pd.DataFrame({'Country': ['Other'], 'Quantity': [other_qty]})
+                    export_pie_data = pd.concat([export_pie_data, other_row], ignore_index=True)
+            
+            import plotly.express as px
+            fig_export_pie = px.pie(
+                export_pie_data,
+                values='Quantity',
+                names='Country',
+                title=f"Export Quantity by Country ({year_range[0]}-{year_range[1]})"
+            )
+            fig_export_pie.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig_export_pie, use_container_width=True)
+        
+        with export_chart_col2:
+            st.write("**Export Distribution by Value**")
+            
+            # Value-based pie chart
+            export_pie_value = exports_by_partner[['Partner', 'value_usd']].copy()
+            export_pie_value.columns = ['Country', 'Value']
+            
+            # Calculate other value
+            if len(export_df_filtered) > len(export_pie_value):
+                other_value = export_df_filtered[~export_df_filtered['reporter_iso3'].isin(
+                    exports_by_partner['reporter_iso3']
+                )]['value_usd'].sum()
+                
+                if other_value > 0:
+                    other_row = pd.DataFrame({'Country': ['Other'], 'Value': [other_value]})
+                    export_pie_value = pd.concat([export_pie_value, other_row], ignore_index=True)
+            
+            fig_export_pie_val = px.pie(
+                export_pie_value,
+                values='Value',
+                names='Country',
+                title=f"Export Value by Country ({year_range[0]}-{year_range[1]})"
+            )
+            fig_export_pie_val.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig_export_pie_val, use_container_width=True)
+        
+        # ====================================================================
+        # IMPORT PARTNERS ANALYSIS
+        # ====================================================================
+        
+        st.subheader("Top 10 Importing Countries")
+        
+        # Filter imports
+        import_df_filtered = trade_df[trade_df['flow'].str.lower() == 'import'].copy()
+        
+        # Aggregate by reporter (the country importing)
+        imports_by_partner = import_df_filtered.groupby('reporter_iso3').agg({
+            'quantity': 'sum',
+            'value_usd': 'sum'
+        }).reset_index()
+        
+        # Filter out zero quantities
+        imports_by_partner = imports_by_partner[imports_by_partner['quantity'] > 0].copy()
+        
+        # Sort by quantity (descending) and get top 10
+        imports_by_partner = imports_by_partner.sort_values('quantity', ascending=False).head(10).reset_index(drop=True)
+        
+        # Add rank column
+        imports_by_partner.insert(0, 'Rank', range(1, len(imports_by_partner) + 1))
+        
+        # Map ISO3 to country names
+        imports_by_partner['Partner'] = imports_by_partner['reporter_iso3'].map(
+            lambda x: iso3_to_name.get(x, x)
+        )
+        
+        # Format display columns
+        imports_display = imports_by_partner[['Rank', 'Partner', 'quantity', 'value_usd']].copy()
+        imports_display.columns = ['Rank', 'Country', 'Total Quantity (tonnes)', 'Total Value (USD)']
+        imports_display['Total Quantity (tonnes)'] = imports_display['Total Quantity (tonnes)'].apply(
+            lambda x: f"{x:,.0f}"
+        )
+        imports_display['Total Value (USD)'] = imports_display['Total Value (USD)'].apply(
+            lambda x: f"${x:,.0f}" if x > 0 else "$0"
+        )
+        
+        # Display with sorting
+        st.dataframe(imports_display, use_container_width=True, hide_index=True)
+        
+        # Pie chart for imports
+        import_chart_col1, import_chart_col2 = st.columns([1, 1])
+        
+        with import_chart_col1:
+            st.write("**Import Distribution by Quantity**")
+            
+            # Prepare data for pie chart (top 10 + Other)
+            import_pie_data = imports_by_partner[['Partner', 'quantity']].copy()
+            import_pie_data.columns = ['Country', 'Quantity']
+            
+            # Calculate "Other" if there are more than top 10
+            if len(import_df_filtered) > len(import_pie_data):
+                other_qty = import_df_filtered[~import_df_filtered['reporter_iso3'].isin(
+                    imports_by_partner['reporter_iso3']
+                )]['quantity'].sum()
+                
+                if other_qty > 0:
+                    other_row = pd.DataFrame({'Country': ['Other'], 'Quantity': [other_qty]})
+                    import_pie_data = pd.concat([import_pie_data, other_row], ignore_index=True)
+            
+            fig_import_pie = px.pie(
+                import_pie_data,
+                values='Quantity',
+                names='Country',
+                title=f"Import Quantity by Country ({year_range[0]}-{year_range[1]})"
+            )
+            fig_import_pie.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig_import_pie, use_container_width=True)
+        
+        with import_chart_col2:
+            st.write("**Import Distribution by Value**")
+            
+            # Value-based pie chart
+            import_pie_value = imports_by_partner[['Partner', 'value_usd']].copy()
+            import_pie_value.columns = ['Country', 'Value']
+            
+            # Calculate other value
+            if len(import_df_filtered) > len(import_pie_value):
+                other_value = import_df_filtered[~import_df_filtered['reporter_iso3'].isin(
+                    imports_by_partner['reporter_iso3']
+                )]['value_usd'].sum()
+                
+                if other_value > 0:
+                    other_row = pd.DataFrame({'Country': ['Other'], 'Value': [other_value]})
+                    import_pie_value = pd.concat([import_pie_value, other_row], ignore_index=True)
+            
+            fig_import_pie_val = px.pie(
+                import_pie_value,
+                values='Value',
+                names='Country',
+                title=f"Import Value by Country ({year_range[0]}-{year_range[1]})"
+            )
+            fig_import_pie_val.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig_import_pie_val, use_container_width=True)
+        
+        # ====================================================================
+        # DOWNLOAD FULL DATA
+        # ====================================================================
+        
+        st.markdown("---")
+        st.subheader("Download Full Trade Data")
+        
         csv = trade_df.to_csv(index=False)
         st.download_button(
-            label="📥 Download Trade Data as CSV",
+            label="📥 Download All Trade Records as CSV",
             data=csv,
             file_name=f"trade_data_{selected_hs_code}_{year_range[0]}-{year_range[1]}.csv",
             mime="text/csv"
@@ -180,6 +373,9 @@ with tab1:
 with tab2:
     st.subheader("Annual Imports vs Exports by Country")
     
+    # Get ISO3 to country name mapping
+    iso3_to_name = get_iso3_to_name_mapping()
+    
     trade_df = get_trade_data(
         hs_code=selected_hs_code,
         year_min=year_range[0],
@@ -187,29 +383,25 @@ with tab2:
     )
     
     if not trade_df.empty:
-        # Debug: Show data structure
-        with st.expander("📊 Data Debug Info"):
-            st.write(f"Total records: {len(trade_df)}")
-            st.write(f"Columns: {list(trade_df.columns)}")
-            if 'flow' in trade_df.columns:
-                st.write(f"Flow values: {trade_df['flow'].unique()}")
-                st.write(f"Flow value counts:\n{trade_df['flow'].value_counts()}")
-            else:
-                st.warning("⚠️ 'flow' column not found in trade data!")
-            st.write(f"Sample data:\n{trade_df.head()}")
-        
         # Properly filter imports and exports by flow column
         if 'flow' in trade_df.columns:
             # Filter by flow type
             export_df = trade_df[trade_df['flow'].str.lower() == 'export']
             import_df = trade_df[trade_df['flow'].str.lower() == 'import']
             
-            st.info(f"Export records: {len(export_df)} | Import records: {len(import_df)}")
+            # Display data quality summary
+            col_quality1, col_quality2, col_quality3 = st.columns(3)
+            with col_quality1:
+                st.metric("Total Trade Records", f"{len(trade_df):,}")
+            with col_quality2:
+                st.metric("Export Records", f"{len(export_df):,}")
+            with col_quality3:
+                st.metric("Import Records", f"{len(import_df):,}")
         else:
             # Fallback if flow column missing: use reporter/partner assumption
             export_df = trade_df
             import_df = trade_df
-            st.warning("Using reporter/partner assumption for exports/imports")
+            st.warning("⚠️ Unable to distinguish between imports and exports in current data")
         
         # Get unique countries
         all_countries = pd.concat([
@@ -220,11 +412,17 @@ with tab2:
         # Remove NaN values and sort
         all_countries = [c for c in all_countries if pd.notna(c)]
         
+        # Create mapping for display (ISO3 -> Country Name)
+        country_display_mapping = {iso3: iso3_to_name.get(iso3, iso3) for iso3 in all_countries}
+        
         # Country selector for detailed view
-        country_display_options = ["All Countries (Top 10)"] + sorted(all_countries)
+        country_options_list = sorted(all_countries, key=lambda x: country_display_mapping.get(x, x))
+        country_display_options = ["All Countries (Top 10)"] + country_options_list
+        
         selected_country_display = st.selectbox(
             "Select Country for Detailed View",
             options=country_display_options,
+            format_func=lambda x: country_display_mapping.get(x, x) if x != "All Countries (Top 10)" else x,
             key="imports_exports_country"
         )
         
@@ -266,6 +464,9 @@ with tab2:
                     aggfunc='sum'
                 )
                 
+                # Map ISO3 codes to country names for display
+                exp_pivot.index = exp_pivot.index.map(lambda x: iso3_to_name.get(x, x))
+                
                 import plotly.graph_objects as go
                 fig_exp = go.Figure()
                 
@@ -296,6 +497,9 @@ with tab2:
                     aggfunc='sum'
                 )
                 
+                # Map ISO3 codes to country names for display
+                imp_pivot.index = imp_pivot.index.map(lambda x: iso3_to_name.get(x, x))
+                
                 fig_imp = go.Figure()
                 
                 for country in imp_pivot.index:
@@ -318,6 +522,7 @@ with tab2:
         else:
             # Single country detailed view
             country_iso = selected_country_display
+            country_name = iso3_to_name.get(country_iso, country_iso)
             
             # Get exports for this country (where they are the reporter and flow='export')
             if 'flow' in export_df.columns:
@@ -344,7 +549,7 @@ with tab2:
                 col_chart, col_table = st.columns([2, 1])
                 
                 with col_chart:
-                    st.write(f"**Imports vs Exports for {country_iso}**")
+                    st.write(f"**Imports vs Exports for {country_name}**")
                     
                     import plotly.graph_objects as go
                     fig = go.Figure()
@@ -367,7 +572,7 @@ with tab2:
                     ))
                     
                     fig.update_layout(
-                        title=f"Annual Imports vs Exports - {country_iso}",
+                        title=f"Annual Imports vs Exports - {country_name}",
                         xaxis_title="Year",
                         yaxis_title="Trade Value (USD)",
                         barmode='group',
@@ -395,7 +600,7 @@ with tab2:
                     summary_df = pd.DataFrame(summary_data)
                     st.dataframe(summary_df, use_container_width=True, hide_index=True)
             else:
-                st.warning(f"No trade data available for {country_iso} in the selected period")
+                st.warning(f"No trade data available for {country_name} in the selected period")
 
 # ============================================================================
 # FOOTER
