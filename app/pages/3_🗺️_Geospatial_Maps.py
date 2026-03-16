@@ -70,39 +70,34 @@ SOURCE_AVAILABILITY = {
 }
 
 # ============================================================================
-# GLOBAL FILTERS (Expandable Section)
+# GLOBAL FILTERS (Sidebar)
 # ============================================================================
 
-st.subheader("⚙️ Map Configuration")
+st.sidebar.title("🔍 Global Filters")
 
-filter_cols = st.columns(3)
+commodity = st.sidebar.selectbox(
+    "📦 Commodity",
+    options=['titanium_minerals', 'zircon', 'rare_earth_elements'],
+    format_func=lambda x: x.replace('_', ' ').title(),
+    key="geo_commodity"
+)
 
-with filter_cols[0]:
-    commodity = st.selectbox(
-        "📦 Commodity",
-        options=['titanium_minerals', 'zircon', 'rare_earth_elements'],
-        format_func=lambda x: x.replace('_', ' ').title(),
-        key="geo_commodity"
-    )
+year = st.sidebar.slider(
+    "📅 Year",
+    min_value=1950,
+    max_value=2023,
+    value=2020,
+    step=1,
+    key="geo_year"
+)
 
-with filter_cols[1]:
-    year = st.slider(
-        "📅 Year",
-        min_value=1950,
-        max_value=2023,
-        value=2020,
-        step=1,
-        key="geo_year"
-    )
-
-with filter_cols[2]:
-    available_sources = SOURCE_AVAILABILITY.get(commodity, ['BGS'])
-    source_options = available_sources + ['All Sources']
-    data_source = st.selectbox(
-        "📊 Data Source",
-        options=source_options,
-        key="geo_data_source"
-    )
+available_sources = SOURCE_AVAILABILITY.get(commodity, ['BGS'])
+source_options = available_sources + ['All Sources']
+data_source = st.sidebar.selectbox(
+    "📊 Data Source",
+    options=source_options,
+    key="geo_data_source"
+)
 
 # ============================================================================
 # VISUALIZATION OPTIONS
@@ -184,32 +179,6 @@ if not prod_df.empty:
         # Absolute production
         max_prod = country_prod['production'].max()
         country_prod['normalized_production'] = country_prod['production'] / max_prod
-    
-    # Display statistics
-    st.write("**📈 Data Summary:**")
-    
-    # Show data source info
-    source_info = f"**Data Source:** {data_source}"
-    if data_source == 'All Sources' and 'data_source' in prod_df.columns:
-        sources_in_data = prod_df['data_source'].unique()
-        source_info = f"**Data Source:** {', '.join(sorted(sources_in_data))}"
-    
-    st.info(source_info)
-    
-    summary_cols = st.columns(4)
-    
-    with summary_cols[0]:
-        st.metric("Total Production", f"{country_prod['production'].sum():,.0f} tonnes")
-    
-    with summary_cols[1]:
-        st.metric("Countries Producing", f"{len(country_prod)}")
-    
-    with summary_cols[2]:
-        top_country = country_prod.loc[country_prod['production'].idxmax()]
-        st.metric("Top Producer", top_country['name'])
-    
-    with summary_cols[3]:
-        st.metric("Top Quantity", f"{country_prod['production'].max():,.0f} tonnes")
     
     # Create map
     m = folium.Map(

@@ -25,6 +25,7 @@ wheels/
 .installed.cfg
 *.egg
 venv/
+.venv/
 ENV/
 env/
 
@@ -56,3 +57,6 @@ logs/
 # Temporary files
 *.tmp
 .cache/
+
+CLAUDE.md
+venv

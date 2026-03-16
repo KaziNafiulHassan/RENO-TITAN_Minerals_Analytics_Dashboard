@@ -17,7 +17,7 @@ from app.utils.database import test_connection, get_table_count
 # ============================================================================
 
 st.set_page_config(
-    page_title="RENO-TITAN Intelligence Platform",
+    page_title="Mineral Analytics Platform for RENO-TITAN Project",
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -27,7 +27,7 @@ st.set_page_config(
 # HOME PAGE CONTENT
 # ============================================================================
 
-st.title("🌍 RENO-TITAN Intelligence Platform")
+st.title("🌍 Mineral Analytics Platform for RENO-TITAN Project")
 st.write("#### Global Supply Chain Analytics for Titanium, Zirconium & Rare Earth Elements")
 
 col1, col2 = st.columns(2)

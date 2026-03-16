@@ -1,35 +1,38 @@
+# Generated for uv — pip-compatible pinned requirements.
+# To regenerate after uv sync: uv export --format requirements-txt -o requirements.txt
+#
+# Conda-internal packages (archspec, boltons, conda, conda-libmamba-solver,
+# conda-package-handling, conda_package_streaming, libmambapy, menuinst,
+# pycosat) have been removed — they are not needed in a uv/pip environment.
+# Conda file:// URI entries have been replaced with plain PyPI package names.
+
 alembic==1.18.3
 altair==6.0.0
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
-archspec @ file:///home/conda/feedstock_root/build_artifacts/archspec_1737352602016/work
 attrs==25.4.0
 blinker==1.9.0
-boltons @ file:///home/conda/feedstock_root/build_artifacts/boltons_1749686179973/work
-Brotli @ file:///home/conda/feedstock_root/build_artifacts/brotli-split_1764016952863/work
+boltons
+brotli
 cachetools==6.2.6
-certifi @ file:///home/conda/feedstock_root/build_artifacts/certifi_1767500808759/work/certifi
-cffi @ file:///home/conda/feedstock_root/build_artifacts/cffi_1761202850602/work
-charset-normalizer @ file:///home/conda/feedstock_root/build_artifacts/charset-normalizer_1760437218288/work
+certifi
+cffi
+charset-normalizer
 click==8.3.1
 cloudpickle==3.1.2
-colorama @ file:///home/conda/feedstock_root/build_artifacts/colorama_1733218098505/work
-conda @ file:///home/conda/feedstock_root/build_artifacts/conda_1770031335390/work/conda-src
-conda-libmamba-solver @ file:///home/conda/feedstock_root/build_artifacts/conda-libmamba-solver_1764081326783/work/src
-conda-package-handling @ file:///home/conda/feedstock_root/build_artifacts/conda-package-handling_1736345463896/work
-conda_package_streaming @ file:///home/conda/feedstock_root/build_artifacts/conda-package-streaming_1751548120229/work
+colorama
 contourpy==1.3.3
 cryptography==46.0.4
 cycler==0.12.1
 databricks-sdk==0.85.0
-distro @ file:///home/conda/feedstock_root/build_artifacts/distro_1734729835256/work
+distro
 docker==7.1.0
 fastapi==0.128.5
 Flask==3.1.2
 flask-cors==6.0.2
 fonttools==4.61.1
-frozendict @ file:///home/conda/feedstock_root/build_artifacts/frozendict_1763082802787/work
+frozendict
 gitdb==4.0.12
 GitPython==3.1.46
 google-auth==2.48.0
@@ -39,29 +42,27 @@ graphql-relay==3.2.0
 greenlet==3.3.1
 gunicorn==23.0.0
 h11==0.16.0
-h2 @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_h2_1756364871/work
-hpack @ file:///home/conda/feedstock_root/build_artifacts/hpack_1737618293087/work
+h2
+hpack
 huey==2.6.0
-hyperframe @ file:///home/conda/feedstock_root/build_artifacts/hyperframe_1737618333194/work
-idna @ file:///home/conda/feedstock_root/build_artifacts/idna_1760286409563/work
+hyperframe
+idna
 importlib_metadata==8.7.1
 itsdangerous==2.2.0
 Jinja2==3.1.6
 joblib==1.5.3
-jsonpatch @ file:///home/conda/feedstock_root/build_artifacts/jsonpatch_1733814567314/work
-jsonpointer @ file:///home/conda/feedstock_root/build_artifacts/jsonpointer_1756754132407/work
+jsonpatch
+jsonpointer
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 kiwisolver==1.4.9
-libmambapy @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_libmambapy_1764158555/work/libmambapy
 Mako==1.3.10
 MarkupSafe==3.0.3
 matplotlib==3.10.8
-menuinst @ file:///home/conda/feedstock_root/build_artifacts/menuinst_1761299738838/work
 mlflow==3.9.0
 mlflow-skinny==3.9.0
 mlflow-tracing==3.9.0
-msgpack @ file:///home/conda/feedstock_root/build_artifacts/msgpack-python_1762503974934/work
+msgpack
 narwhals==2.16.0
 networkx==3.6.1
 numpy==2.4.2
@@ -69,35 +70,37 @@ opentelemetry-api==1.39.1
 opentelemetry-proto==1.39.1
 opentelemetry-sdk==1.39.1
 opentelemetry-semantic-conventions==0.60b1
-packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work
+packaging
 pandas==2.0.3
 pillow==12.1.0
-platformdirs @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_platformdirs_1759953252/work
-pluggy @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_pluggy_1764896838/work
+plotly>=5.0.0
+folium>=0.14.0
+streamlit-folium>=0.15.0
+platformdirs
+pluggy
 prettytable==3.17.0
 protobuf==6.33.5
 pyarrow==22.0.0
 pyasn1==0.6.2
 pyasn1_modules==0.4.2
-pycosat @ file:///home/conda/feedstock_root/build_artifacts/pycosat_1757744639790/work
-pycparser @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_pycparser_1733195786/work
+pycparser
 pydantic==2.12.5
 pydantic_core==2.41.5
 pydeck==0.9.1
 pyparsing==3.3.2
 pypdf==6.7.0
 PyPDF2==3.0.1
-PySocks @ file:///home/conda/feedstock_root/build_artifacts/pysocks_1733217236728/work
+PySocks
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 pytz==2025.2
 PyYAML==6.0.3
 referencing==0.37.0
-requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1755614211359/work
+requests
 rpds-py==0.30.0
 rsa==4.9.1
-ruamel.yaml @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml_1761160588389/work
-ruamel.yaml.clib @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml.clib_1760564169582/work
+ruamel.yaml
+ruamel.yaml.clib
 scikit-learn==1.8.0
 scipy==1.17.0
 setuptools==82.0.0
@@ -108,16 +111,17 @@ SQLAlchemy==2.0.46
 sqlparse==0.5.5
 starlette==0.52.1
 streamlit==1.53.1
+supabase>=2.0.0
 tenacity==9.1.2
 threadpoolctl==3.6.0
 toml==0.10.2
 tornado==6.5.4
-tqdm @ file:///home/conda/feedstock_root/build_artifacts/tqdm_1735661334605/work
-truststore @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_truststore_1753886790/work
+tqdm
+truststore
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2025.3
-urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1750271362675/work
+urllib3
 uvicorn==0.40.0
 watchdog==6.0.0
 wcwidth==0.6.0

@@ -11,7 +11,8 @@ variables:
 fetch_data:
   stage: fetch
   script:
-    - pip install requests pandas dvc
+    - pip install uv
+    - uv pip install --system requests pandas dvc
     - python data/scripts/fetch_comtrade.py
     - dvc repro
     - dvc push
@@ -27,7 +28,8 @@ fetch_data:
 test_inconsistencies:
   stage: test
   script:
-    - pip install pandas sqlalchemy
+    - pip install uv
+    - uv pip install --system pandas sqlalchemy
     - python data/scripts/check_inconsistencies.py
   dependencies:
     - fetch_data
